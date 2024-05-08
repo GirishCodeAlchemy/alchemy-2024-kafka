@@ -3,8 +3,8 @@
 black:
 	black alchemy
 
-test:
-	coverage run -m pytest tests && coverage html && open htmlcov/index.html
+# test:
+# 	coverage run -m pytest tests && coverage html && open htmlcov/index.html
 
 type-check:
 	mypy alchemy
