@@ -17,6 +17,7 @@ services:
     container_name: broker
     ports:
       - "9092:9092"
+      - "9101:9101"
     depends_on:
       - zookeeper
     environment:
@@ -27,6 +28,11 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CLEANUP_POLICY: "compact"
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
     networks:
       - alchemy
 
@@ -55,6 +61,7 @@ services:
       - broker
       - zookeeper
     environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
       KAFKA_REST_BOOTSTRAP_SERVERS: "broker:29092"
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
     networks:
@@ -73,9 +80,13 @@ services:
       CONNECT_GROUP_ID : 1
       CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
       CONNECT_REST_ADVERTISED_HOST_NAME: "connectors"
-      CONNECT_CONFIG_STORAGE_TOPIC: connect_configs
-      CONNECT_STATUS_STORAGE_TOPIC: connect_statuses
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_CONFIG_STORAGE_TOPIC: connect_configs_cleanup_policy_compact
+      CONNECT_STATUS_STORAGE_TOPIC: connect_statuses_cleanup_policy_compact
       CONNECT_OFFSET_STORAGE_TOPIC: connect_offsets
+      CONNECT_CLEANUP_POLICY: "compact"
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
     networks:
@@ -91,7 +102,7 @@ services:
       - broker
       - zookeeper
     environment:
-      KSQL_BOOTSTRAP_SERVERS: "broker:9092"
+      KSQL_BOOTSTRAP_SERVERS: "broker:29092"
       KSQL_LISTENERS: "http://0.0.0.0:8088"
       KSQL_KSQL_SERVICE_ID: "ksql-service"
     networks:

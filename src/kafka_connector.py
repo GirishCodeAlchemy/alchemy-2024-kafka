@@ -1,11 +1,14 @@
 #!/usr/bin/python3
 
 import json
+import os
 import sys
 from subprocess import PIPE, Popen
 
 import requests
+from dotenv import load_dotenv
 
+load_dotenv()
 # sys.path.append("/opt/confluent/scripts")
 
 # from utils import get_server_details
@@ -23,9 +26,9 @@ class KafkaConnectorManager:
         self.env = env
         self.user = "connect"
         self.password = self.get_password()
-        self.cacert = "cacerts.pem"
-        self.key = "ca.key"
-        self.cer = "ca.cer"
+        self.cacert = os.getenv("CACERT")
+        self.key = os.getenv("CA_KEY")
+        self.cer = os.getenv("CA_CER")
 
         # Combine username and password for authentication
         self.auth = requests.auth.HTTPBasicAuth(self.user, self.password)
@@ -43,10 +46,14 @@ class KafkaConnectorManager:
             str: The URL for Kafka connectors
         """
         server = "localhost"
+        url = ""
         if self.env == "stage":
             server = "stage-kafka-connect"
 
-        url = f"https://{server}:8083"
+        if self.cacert:
+            url = f"https://{server}:8083"
+        else:
+            url = f"http://{server}:8083"
         return url
 
     def get_password(self):
@@ -77,10 +84,17 @@ class KafkaConnectorManager:
             "Content-Type": "application/json",
         }
         try:
-            # Send the HTTP request with authentication and headers
-            response = requests.request(method, url, headers=headers,
-                auth=self.auth, data=json.dumps(data) if data else None,
-                verify=self.cacert, cert=(self.cer,self.key))
+
+            if self.cacert:
+                # Send the HTTPS request with authentication and headers
+                response = requests.request(method, url, headers=headers,
+                    auth=self.auth, data=json.dumps(data) if data else None,
+                    verify=self.cacert, cert=(self.cer,self.key))
+
+            else:
+                response = requests.request(method, url, headers=headers,
+                    auth=self.auth, data=json.dumps(data) if data else None)
+
             response.raise_for_status()  # Raise an exception for non-2xx status codes
             print(json.dumps(response.json(), indent=4))
 
@@ -147,10 +161,10 @@ class KafkaConnectorManager:
             if len(self.argv) < 2:
                 print("Please provide a connector configuration file for the create operation")
                 return
-            data_file = self.argv[1]
-            # Read data from the connector configuration file (implementation not shown)
-            with open(data_file, "r") as f:
-                data = json.load(f)
+            data = self.argv[1]
+            # # Read data from the connector configuration file (implementation not shown)
+            # with open(data_file, "r") as f:
+            #     data = json.load(f)
             print(f"\nCreated the connector in {self.env}\n")
             self.request_kafka("POST", f"{self.url}/connectors", data=data)
 
@@ -190,6 +204,19 @@ class KafkaConnectorManager:
             connector = self.argv[1]
             print(f"\Pause the connector: {connector} for {self.env}\n")
             self.request_kafka(method, f"{self.url}/connectors/{connector}/pause")
+
+        elif command == "get_secrets":
+            print(f"\Fetch the connector secrets for {self.env}\n")
+            self.request_kafka(method, f"{self.url}/secret/paths/")
+
+        elif command == "set secrets":
+            if len(self.argv) < 2:
+                print("Please provide a connector name for the set secret operation")
+                return
+            connector = self.argv[1]
+            secret = json.dumps({"secret": self.argv[2]})
+            print(f"\Pause the connector: {connector} for {self.env}\n")
+            self.request_kafka(method, f"{self.url}/secret/paths/{connector}/keys/auth/version", data=secret)
 
         # elif command in ("restart connector", "pause connector"):
         #     # Implement logic for these commands
