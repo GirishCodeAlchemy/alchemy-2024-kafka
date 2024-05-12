@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-
+#!/Users/girish/Desktop/workspace/py310/bin/python
 import json
 import os
 import sys
@@ -83,25 +82,28 @@ class KafkaConnectorManager:
         headers = {
             "Content-Type": "application/json",
         }
+        response = None
         try:
 
             if self.cacert:
                 # Send the HTTPS request with authentication and headers
                 response = requests.request(method, url, headers=headers,
-                    auth=self.auth, data=json.dumps(data) if data else None,
+                    auth=self.auth, data=data if data else None,
                     verify=self.cacert, cert=(self.cer,self.key))
 
             else:
                 response = requests.request(method, url, headers=headers,
-                    auth=self.auth, data=json.dumps(data) if data else None)
+                    auth=self.auth, data=data if data else None)
 
             response.raise_for_status()  # Raise an exception for non-2xx status codes
-            print(json.dumps(response.json(), indent=4))
+            if method != "DELETE":
+                print(json.dumps(response.json(), indent=4))
+            else:
+                print(f"Deleted: {response.status_code}")
 
-        except requests.exceptions.RequestException as e:
-            print(f"Error making request to Kafka connector: {e}")
+        except requests.exceptions.RequestException:
+            print(f"Error: {response.json().get('message')}")
             sys.exit(1)
-
         return response
 
     def handle_command(self):
@@ -125,6 +127,8 @@ class KafkaConnectorManager:
             "delete": "delete connector",
             "restart": "restart connector",
             "pause": "pause connector",
+            "get-secret": "get secrets",
+            "set-secrets": "set secrets"
         }
 
         # Check if a valid command is provided as the first argument
@@ -162,9 +166,6 @@ class KafkaConnectorManager:
                 print("Please provide a connector configuration file for the create operation")
                 return
             data = self.argv[1]
-            # # Read data from the connector configuration file (implementation not shown)
-            # with open(data_file, "r") as f:
-            #     data = json.load(f)
             print(f"\nCreated the connector in {self.env}\n")
             self.request_kafka("POST", f"{self.url}/connectors", data=data)
 
@@ -174,10 +175,7 @@ class KafkaConnectorManager:
                 print("Please provide a connector configuration file for the Update operation")
                 return
             connector = self.argv[1]
-            data_file = self.argv[2]
-            # Read data from the connector configuration file (implementation not shown)
-            with open(data_file, "r") as f:
-                data = json.load(f)
+            data = self.argv[2]
             print(f"\nUpdating the connector in {self.env}\n")
             self.request_kafka("PUT", f"{self.url}/connectors/{connector}/config", data=data)
 
@@ -186,7 +184,7 @@ class KafkaConnectorManager:
                 print("Please provide a connector name for the delete operation")
                 return
             connector = self.argv[1]
-            print(f"\Delete the connector: {connector} for {self.env}\n")
+            print(f"\nDelete the connector: {connector} for {self.env}\n")
             self.request_kafka("DELETE", f"{self.url}/connectors/{connector}")
 
         elif command == "restart connector":
@@ -194,7 +192,7 @@ class KafkaConnectorManager:
                 print("Please provide a connector name for the restart operation")
                 return
             connector = self.argv[1]
-            print(f"\Restart the connector: {connector} for {self.env}\n")
+            print(f"\nRestart the connector: {connector} for {self.env}\n")
             self.request_kafka(method, f"{self.url}/connectors/{connector}/restart")
 
         elif command == "pause connector":
@@ -202,11 +200,11 @@ class KafkaConnectorManager:
                 print("Please provide a connector name for the pause operation")
                 return
             connector = self.argv[1]
-            print(f"\Pause the connector: {connector} for {self.env}\n")
+            print(f"\nPause the connector: {connector} for {self.env}\n")
             self.request_kafka(method, f"{self.url}/connectors/{connector}/pause")
 
-        elif command == "get_secrets":
-            print(f"\Fetch the connector secrets for {self.env}\n")
+        elif command == "get secrets":
+            print(f"\nFetch the connector secrets for {self.env}\n")
             self.request_kafka(method, f"{self.url}/secret/paths/")
 
         elif command == "set secrets":
@@ -215,8 +213,8 @@ class KafkaConnectorManager:
                 return
             connector = self.argv[1]
             secret = json.dumps({"secret": self.argv[2]})
-            print(f"\Pause the connector: {connector} for {self.env}\n")
-            self.request_kafka(method, f"{self.url}/secret/paths/{connector}/keys/auth/version", data=secret)
+            print(f"\nSet the secret for connector: {connector} in {self.env}\n")
+            self.request_kafka("POST", f"{self.url}/secret/paths/{connector}/keys/auth/version", data=secret)
 
         # elif command in ("restart connector", "pause connector"):
         #     # Implement logic for these commands
@@ -247,6 +245,8 @@ def usage(argv):
     print("\tdelete <connector_name>                      - Deletes a specific connector")
     print("\trestart <connector_name>                     - Restarts a specific connector")
     print("\tpause <connector_name>                       - Pauses a specific connector\n")
+    print("\tget-secret                                    - Get Secrets for the specific environment\n")
+    print("\tset-secret <connector_name> <user:pwd>        - Set the secret for a specific connector\n")
     print("\t<connector_name> (optional): The name of the connector (required for get, delete, restart, pause operations)")
     print("\t<connector_json> (optional): connector configuration json (required for create & update operation)")
     print("\n")

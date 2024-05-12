@@ -68,7 +68,10 @@ services:
       - alchemy
 
   connectors:
-    image: confluentinc/cp-kafka-connect:7.3.0
+    # image: confluentinc/cp-kafka-connect:7.3.0
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
     container_name: connectors
     hostname: connectors
     ports:
@@ -89,6 +92,9 @@ services:
       CONNECT_CLEANUP_POLICY: "compact"
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_CONFIG_STORAGE_SECRETS_PROVIDER: "confluent_secrets_provider"
+      CONNECT_CONFIG_PROVIDERS: "secret"
+      # CONNECT_CONFIG_PROVIDERS_SECRET_CLASS: "io.confluent.connect.secretregistry.rbac.config.provider.InternalSecretConfigProvider"
     networks:
       - alchemy
 
@@ -105,6 +111,20 @@ services:
       KSQL_BOOTSTRAP_SERVERS: "broker:29092"
       KSQL_LISTENERS: "http://0.0.0.0:8088"
       KSQL_KSQL_SERVICE_ID: "ksql-service"
+    networks:
+      - alchemy
+
+  debezium-ui:
+    image: debezium/debezium-ui:latest
+    restart: always
+    container_name: debezium-ui
+    hostname: debezium-ui
+    depends_on:
+      - connectors
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CONNECT_URIS: http://connectors:8083
     networks:
       - alchemy
 
