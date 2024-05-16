@@ -72,3 +72,8 @@ This command updates the configuration of the simple-connector in the dev enviro
 ```bash
 ./kafka_connector dev update simple-connector '{"connector.class":"com.github.jcustenborder.kafka.connect.spooldir.SpoolDirJsonSourceConnector","task.max":"1","topic":"test-topic","input.path":"/home/appuser/connect-test/input","input.file.pattern":"sample.txt","error.path":"/home/appuser/connect-test/failure","finished.path":"/home/appuser/connect-test/success","schema.generation.enabled":true,"value.converter":"org.apache.kafka.connect.json.JsonConverter"}'
 ```
+
+### Source For Kafka connect rest apis:
+
+Connectors : https://docs.confluent.io/platform/current/connect/references/restapi.html
+Connectors secret: https://docs.confluent.io/platform/current/connect/rbac/connect-rbac-secret-registry.html
