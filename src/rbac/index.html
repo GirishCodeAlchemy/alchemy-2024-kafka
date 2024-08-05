@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBAC Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+            text-align: center;
+            color: #007bff;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="checkbox"] {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="checkbox"] {
+            width: auto;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .list-group {
+            margin-bottom: 10px;
+        }
+        .list-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .list-item input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .remove-icon {
+            cursor: pointer;
+            color: red;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .remove-icon:hover {
+            color: darkred;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RBAC Management</h1>
+        <form id="pipelineForm">
+            <label for="consumers">Consumers:</label>
+            <div id="consumers-list" class="list-group">
+                <div class="list-item">
+                    <input type="text" placeholder="Consumer" onkeydown="addOnEnter(event, 'consumers-list')">
+                    <span class="remove-icon" onclick="removeItem(this)">×</span>
+                </div>
+            </div>
+
+            <label for="connectors">Connectors:</label>
+            <div id="connectors-list" class="list-group">
+                <div class="list-item">
+                    <input type="text" placeholder="Connector" onkeydown="addOnEnter(event, 'connectors-list')">
+                    <span class="remove-icon" onclick="removeItem(this)">×</span>
+                </div>
+            </div>
+
+            <div class="checkbox-group">
+                <label for="idempotent">Idempotent:</label>
+                <input type="checkbox" id="idempotent" name="idempotent">
+            </div>
+
+            <div class="checkbox-group">
+                <label for="ksql">KSQL:</label>
+                <input type="checkbox" id="ksql" name="ksql" checked>
+            </div>
+
+            <label for="user">User:</label>
+            <input type="text" id="user" name="user" value="testldapid">
+
+            <label for="group">Group:</label>
+            <input type="text" id="group" name="group" value="cp-testldapgrp">
+
+            <div class="checkbox-group">
+                <label for="read_only">Read Only:</label>
+                <input type="checkbox" id="read_only" name="read_only" checked>
+            </div>
+
+            <label for="topics">Topics:</label>
+            <div id="topics-list" class="list-group">
+                <div class="list-item">
+                    <input type="text" placeholder="Topic" onkeydown="addOnEnter(event, 'topics-list')">
+                    <span class="remove-icon" onclick="removeItem(this)">×</span>
+                </div>
+            </div>
+
+            <label for="pattern_type">Pattern Type:</label>
+            <input type="text" id="pattern_type" name="pattern_type" value="PREFIXED">
+
+            <label for="env">Env:</label>
+            <input type="text" id="env" name="env" value="sbxx">
+
+            <label for="triggered_by">Triggered By:</label>
+            <input type="text" id="triggered_by" name="triggered_by">
+
+            <button type="button" onclick="triggerPipeline()">Trigger Pipeline</button>
+        </form>
+    </div>
+    <script>
+        function addOnEnter(event, listId) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const container = document.getElementById(listId);
+                const listItem = document.createElement('div');
+                listItem.className = 'list-item';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = container.firstElementChild.firstElementChild.placeholder;
+                input.onkeydown = event => addOnEnter(event, listId);
+
+                const removeIcon = document.createElement('span');
+                removeIcon.textContent = '×';
+                removeIcon.className = 'remove-icon';
+                removeIcon.onclick = () => container.removeChild(listItem);
+
+                listItem.appendChild(input);
+                listItem.appendChild(removeIcon);
+
+                container.appendChild(listItem);
+            }
+        }
+
+        function removeItem(element) {
+            element.parentElement.remove();
+        }
+
+        async function triggerPipeline() {
+            const form = document.getElementById('pipelineForm');
+            const data = {
+                consumers: Array.from(document.querySelectorAll('#consumers-list input')).map(input => input.value),
+                connectors: Array.from(document.querySelectorAll('#connectors-list input')).map(input => input.value),
+                idempotent: document.getElementById('idempotent').checked,
+                ksql: document.getElementById('ksql').checked,
+                user: form.user.value,
+                group: form.group.value,
+                read_only: document.getElementById('read_only').checked,
+                topics: Array.from(document.querySelectorAll('#topics-list input')).map(input => input.value),
+                pattern_type: form.pattern_type.value,
+                env: form.env.value,
+                triggered_by: form.triggered_by.value
+            };
+
+            const response = await fetch('/trigger-pipeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            alert(JSON.stringify(result));
+        }
+    </script>
+</body>
+</html>
