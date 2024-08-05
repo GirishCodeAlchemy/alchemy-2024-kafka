@@ -36,7 +36,8 @@
             color: #333;
         }
         input[type="text"],
-        input[type="checkbox"] {
+        input[type="checkbox"],
+        select {
             width: calc(100% - 20px);
             padding: 8px;
             margin-top: 5px;
@@ -93,6 +94,12 @@
     <div class="container">
         <h1>RBAC Management</h1>
         <form id="pipelineForm">
+            <label for="action">Option:</label>
+            <select id="action" name="action">
+                <option value="create">Create</option>
+                <option value="delete">Delete</option>
+            </select>
+
             <label for="consumers">Consumers:</label>
             <div id="consumers-list" class="list-group">
                 <div class="list-item">
@@ -139,15 +146,18 @@
             </div>
 
             <label for="pattern_type">Pattern Type:</label>
-            <input type="text" id="pattern_type" name="pattern_type" value="PREFIXED">
+            <select id="pattern_type" name="pattern_type">
+                <option value="PREFIXED">PREFIXED</option>
+                <option value="LITERAL">LITERAL</option>
+            </select>
 
             <label for="env">Env:</label>
             <input type="text" id="env" name="env" value="sbxx">
 
-            <label for="triggered_by">Triggered By:</label>
-            <input type="text" id="triggered_by" name="triggered_by">
+            <label for="requested_by">Triggered By:</label>
+            <input type="text" id="requested_by" name="requested_by">
 
-            <button type="button" onclick="triggerPipeline()">Trigger Pipeline</button>
+            <button type="button" onclick="triggerPipeline()">Send Request</button>
         </form>
     </div>
     <script>
@@ -181,7 +191,9 @@
 
         async function triggerPipeline() {
             const form = document.getElementById('pipelineForm');
+            const action = document.getElementById('action').value;
             const data = {
+                option: action,
                 consumers: Array.from(document.querySelectorAll('#consumers-list input')).map(input => input.value),
                 connectors: Array.from(document.querySelectorAll('#connectors-list input')).map(input => input.value),
                 idempotent: document.getElementById('idempotent').checked,
@@ -190,9 +202,9 @@
                 group: form.group.value,
                 read_only: document.getElementById('read_only').checked,
                 topics: Array.from(document.querySelectorAll('#topics-list input')).map(input => input.value),
-                pattern_type: form.pattern_type.value,
+                pattern_type: document.getElementById('pattern_type').value,
                 env: form.env.value,
-                triggered_by: form.triggered_by.value
+                requested_by: form.requested_by.value
             };
 
             const response = await fetch('/trigger-pipeline', {

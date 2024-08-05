@@ -12,7 +12,7 @@ def index():
 @app.route('/trigger-pipeline', methods=['POST'])
 def trigger_pipeline():
     data = request.json
-    required_keys = ['consumers', 'connectors', 'idempotent', 'ksql', 'user', 'group', 'read_only', 'topics', 'pattern_type', 'env', 'triggered_by']
+    required_keys = ['consumers', 'connectors', 'idempotent', 'ksql', 'user', 'group', 'read_only', 'topics', 'pattern_type', 'env', 'requested_by', 'option']
     if not all(key in data for key in required_keys):
         return jsonify({'error': 'Missing required parameters'}), 400
 
@@ -35,7 +35,8 @@ def trigger_pipeline():
         'variables[TOPICS]': ','.join(data['topics']),
         'variables[PATTERN_TYPE]': data['pattern_type'],
         'variables[ENV]': data['env'],
-        'variables[TRIGGERED_BY]': data['triggered_by']
+        'variables[TRIGGERED_BY]': data['requested_by'],
+        'variable[OPTION]':data['option']
     }
     print(payload)
     response = requests.post(gitlab_pipeline_trigger_url, data=payload)
