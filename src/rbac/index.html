@@ -21,7 +21,7 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 500px;
+            max-width: 900px;
         }
         h1 {
             margin-top: 0;
@@ -29,27 +29,38 @@
             text-align: center;
             color: #007bff;
         }
-        label {
-            display: block;
-            margin: 15px 0 5px;
+        .form-group {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .form-group label {
+            flex: 1;
+            min-width: 100px;
             font-weight: bold;
             color: #333;
+            margin-bottom: 5px;
         }
-        input[type="text"],
-        input[type="checkbox"],
-        select {
-            width: calc(100% - 20px);
+        .form-group input[type="text"],
+        .form-group select,
+        .form-group input[type="checkbox"] {
+            flex: 1;
             padding: 8px;
-            margin-top: 5px;
+            margin: 5px;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-        input[type="checkbox"] {
+        .form-group input[type="checkbox"] {
             width: auto;
         }
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+        }
         button {
-            width: 100%;
+            width: 200px;
             padding: 10px;
             background-color: #007bff;
             color: white;
@@ -57,27 +68,24 @@
             border-radius: 4px;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 20px;
         }
         button:hover {
             background-color: #0056b3;
         }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-top: 10px;
-        }
         .list-group {
-            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
         .list-item {
             display: flex;
             align-items: center;
-            margin-bottom: 5px;
+            margin-right: 10px;
+            margin-bottom: 10px;
         }
         .list-item input {
-            flex-grow: 1;
             margin-right: 10px;
+            flex-grow: 1;
         }
         .remove-icon {
             cursor: pointer;
@@ -88,79 +96,118 @@
         .remove-icon:hover {
             color: darkred;
         }
+        .form-group.inline {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .form-group.inline > div {
+            flex: 1;
+            min-width: 30%;
+        }
+        .form-group.inline > div label {
+            margin-bottom: 5px;
+        }
+        .error-message {
+            color: red;
+            font-size: 12px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>RBAC Management</h1>
         <form id="pipelineForm">
-            <label for="action">Option:</label>
-            <select id="action" name="action">
-                <option value="create">Create</option>
-                <option value="delete">Delete</option>
-            </select>
-
-            <label for="consumers">Consumers:</label>
-            <div id="consumers-list" class="list-group">
-                <div class="list-item">
-                    <input type="text" placeholder="Consumer" onkeydown="addOnEnter(event, 'consumers-list')">
-                    <span class="remove-icon" onclick="removeItem(this)">×</span>
+            <div class="form-group inline">
+                <div>
+                    <label for="action">Option:</label>
+                    <select id="action" name="action">
+                        <option value="create">Create</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="env">Env:</label>
+                    <select id="env" name="env">
+                        <option value="sbxx">SBXX</option>
+                        <option value="sbxo">SBXO</option>
+                        <option value="sbxr">SBXR</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="pattern_type">Pattern Type:</label>
+                    <select id="pattern_type" name="pattern_type">
+                        <option value="PREFIXED">PREFIXED</option>
+                        <option value="LITERAL">LITERAL</option>
+                    </select>
                 </div>
             </div>
-
-            <label for="connectors">Connectors:</label>
-            <div id="connectors-list" class="list-group">
-                <div class="list-item">
-                    <input type="text" placeholder="Connector" onkeydown="addOnEnter(event, 'connectors-list')">
-                    <span class="remove-icon" onclick="removeItem(this)">×</span>
+            <div class="form-group inline">
+                <div>
+                    <label for="user">LDAP User:*</label>
+                    <input type="text" id="user" name="user" required>
+                    <span id="user-error" class="error-message">Please enter a valid LDAP user.</span>
+                </div>
+                <div>
+                    <label for="group">LDAP Group:*</label>
+                    <input type="text" id="group" name="group" required>
+                    <span id="group-error" class="error-message">Please enter a valid LDAP group.</span>
                 </div>
             </div>
-
-            <div class="checkbox-group">
-                <label for="idempotent">Idempotent:</label>
-                <input type="checkbox" id="idempotent" name="idempotent">
-            </div>
-
-            <div class="checkbox-group">
-                <label for="ksql">KSQL:</label>
-                <input type="checkbox" id="ksql" name="ksql" checked>
-            </div>
-
-            <label for="user">User:</label>
-            <input type="text" id="user" name="user" value="testldapid">
-
-            <label for="group">Group:</label>
-            <input type="text" id="group" name="group" value="cp-testldapgrp">
-
-            <div class="checkbox-group">
-                <label for="read_only">Read Only:</label>
-                <input type="checkbox" id="read_only" name="read_only" checked>
-            </div>
-
-            <label for="topics">Topics:</label>
-            <div id="topics-list" class="list-group">
-                <div class="list-item">
-                    <input type="text" placeholder="Topic" onkeydown="addOnEnter(event, 'topics-list')">
-                    <span class="remove-icon" onclick="removeItem(this)">×</span>
+            <div class="form-group inline">
+                <div>
+                    <label for="idempotent">Idempotent:</label>
+                    <input type="checkbox" id="idempotent" name="idempotent">
+                </div>
+                <div>
+                    <label for="read_only">Read Only:</label>
+                    <input type="checkbox" id="read_only" name="read_only" checked>
+                </div>
+                <div>
+                    <label for="ksql">KSQL:</label>
+                    <input type="checkbox" id="ksql" name="ksql" checked>
                 </div>
             </div>
-
-            <label for="pattern_type">Pattern Type:</label>
-            <select id="pattern_type" name="pattern_type">
-                <option value="PREFIXED">PREFIXED</option>
-                <option value="LITERAL">LITERAL</option>
-            </select>
-
-            <label for="env">Env:</label>
-            <input type="text" id="env" name="env" value="sbxx">
-
-            <label for="requested_by">Triggered By:</label>
-            <input type="text" id="requested_by" name="requested_by">
-
-            <button type="button" onclick="triggerPipeline()">Send Request</button>
+            <div class="form-group">
+                <label>Consumers:</label>
+                <div id="consumers-list" class="list-group">
+                    <div class="list-item">
+                        <input type="text" id="consumers1" placeholder="Consumer" onkeydown="addOnEnter(event, 'consumers-list')">
+                        <span class="remove-icon" onclick="removeItem(this)">×</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Topics:</label>
+                <div id="topics-list" class="list-group">
+                    <div class="list-item">
+                        <input type="text" id="topics1" placeholder="Topic" onkeydown="addOnEnter(event, 'topics-list')">
+                        <span class="remove-icon" onclick="removeItem(this)">×</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Connectors:</label>
+                <div id="connectors-list" class="list-group">
+                    <div class="list-item">
+                        <input type="text" id="connector1" placeholder="Connector" onkeydown="addOnEnter(event, 'connectors-list')">
+                        <span class="remove-icon" onclick="removeItem(this)">×</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="requested_by">Requested By:*</label>
+                <input type="text" id="requested_by" name="requested_by" required>
+                <span id="requested_by-error" class="error-message">Please enter a mandatory Requested By field.</span>
+            </div>
+            <div class="button-group">
+                <button type="button" onclick="triggerPipeline()">Send Request</button>
+            </div>
         </form>
     </div>
     <script>
+
         function addOnEnter(event, listId) {
             if (event.key === "Enter") {
                 event.preventDefault();
@@ -192,31 +239,58 @@
         async function triggerPipeline() {
             const form = document.getElementById('pipelineForm');
             const action = document.getElementById('action').value;
-            const data = {
-                option: action,
-                consumers: Array.from(document.querySelectorAll('#consumers-list input')).map(input => input.value),
-                connectors: Array.from(document.querySelectorAll('#connectors-list input')).map(input => input.value),
-                idempotent: document.getElementById('idempotent').checked,
-                ksql: document.getElementById('ksql').checked,
-                user: form.user.value,
-                group: form.group.value,
-                read_only: document.getElementById('read_only').checked,
-                topics: Array.from(document.querySelectorAll('#topics-list input')).map(input => input.value),
-                pattern_type: document.getElementById('pattern_type').value,
-                env: form.env.value,
-                requested_by: form.requested_by.value
-            };
+            const user = form.user.value.trim();
+            const group = form.group.value.trim();
+            const requested_by = form.requested_by.value.trim();
 
-            const response = await fetch('/trigger-pipeline', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
+            // Check for empty user and group fields
+            let hasError = false;
+            if (!user) {
+                document.getElementById('user-error').style.display = 'block';
+                hasError = true;
+            } else {
+                document.getElementById('user-error').style.display = 'none';
+            }
+            if (!group) {
+                document.getElementById('group-error').style.display = 'block';
+                hasError = true;
+            } else {
+                document.getElementById('group-error').style.display = 'none';
+            }
+            if (!requested_by) {
+                document.getElementById('requested_by-error').style.display = 'block';
+                hasError = true;
+            } else {
+                document.getElementById('requested_by-error').style.display = 'none';
+            }
+            if (!hasError) {
+                const data = {
+                    option: action,
+                    consumers: Array.from(document.querySelectorAll('#consumers-list input')).filter(input =>input.value.trim() !== '').map(input => input.value),
+                    connectors: Array.from(document.querySelectorAll('#connectors-list input')).filter(input =>input.value.trim() !== '').map(input => input.value),
+                    idempotent: document.getElementById('idempotent').checked,
+                    ksql: document.getElementById('ksql').checked,
+                    user: form.user.value,
+                    group: form.group.value,
+                    read_only: document.getElementById('read_only').checked,
+                    topics: Array.from(document.querySelectorAll('#topics-list input')).filter(input =>input.value.trim() !== '').map(input => input.value),
+                    pattern_type: document.getElementById('pattern_type').value,
+                    env: document.getElementById('env').value,
+                    requested_by: form.requested_by.value
+                };
 
-            const result = await response.json();
-            alert(JSON.stringify(result));
+                const response = await fetch('/trigger-pipeline', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                alert(JSON.stringify(result));
+            }
+
         }
     </script>
 </body>

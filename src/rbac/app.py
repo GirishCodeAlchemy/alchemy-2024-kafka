@@ -21,6 +21,8 @@ def trigger_pipeline():
     gitlab_pipeline_trigger_url = f'https://gitlab.com/api/v4/projects/{gitlab_project_id}/trigger/pipeline'
     gitlab_trigger_token = 'your_trigger_token'
 
+    print(data)
+
     # Prepare the payload for the GitLab pipeline
     payload = {
         'token': gitlab_trigger_token,
@@ -36,7 +38,7 @@ def trigger_pipeline():
         'variables[PATTERN_TYPE]': data['pattern_type'],
         'variables[ENV]': data['env'],
         'variables[TRIGGERED_BY]': data['requested_by'],
-        'variable[OPTION]':data['option']
+        'variable[OPTION]': data['option']
     }
     print(payload)
     response = requests.post(gitlab_pipeline_trigger_url, data=payload)
@@ -47,4 +49,4 @@ def trigger_pipeline():
         return jsonify({'error': 'Failed to Create RBAC', 'details': response.json()}), response.status_code
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0",port=8001, debug=True)
