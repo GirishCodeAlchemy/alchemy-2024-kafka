@@ -1,6 +1,7 @@
 import os
 
 import requests
+from email_utils import generate_email
 from flask import Flask, jsonify, request, send_from_directory
 
 app = Flask(__name__)
@@ -26,7 +27,7 @@ def trigger_pipeline():
     # Prepare the payload for the GitLab pipeline
     payload = {
         'token': gitlab_trigger_token,
-        'ref': 'main',  # or any other branch you want to trigger the pipeline on
+        'ref': 'rbac',  # or any other branch you want to trigger the pipeline on
         'variables[CONSUMERS]': ','.join(data['consumers']),
         'variables[CONNECTORS]': ','.join(data['connectors']),
         'variables[IDEMPOTENT]': str(data['idempotent']),
@@ -44,9 +45,11 @@ def trigger_pipeline():
     response = requests.post(gitlab_pipeline_trigger_url, data=payload)
 
     if response.status_code == 201:
+        response_data = response.json()
+        generate_email(data, response_data["web_url"])
         return jsonify({'status': 'RBAC creation is Submitted'}), 201
     else:
         return jsonify({'error': 'Failed to Create RBAC', 'details': response.json()}), response.status_code
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0",port=8001, debug=True)
+    app.run(host="0.0.0.0", port=8001, debug=True)
