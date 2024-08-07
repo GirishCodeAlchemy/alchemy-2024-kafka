@@ -6,28 +6,34 @@
     <title>RBAC Management</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f0f0 25%, #d0d0d0 100%);
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            color: #333;
         }
         .container {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, lightblue 25%, #d0d0d0 100%);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 900px;
+            max-width: 800px;
+            transition: all 0.3s ease-in-out;
+        }
+        .container:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
         h1 {
             margin-top: 0;
-            font-size: 24px;
+            font-size: 26px;
             text-align: center;
             color: #007bff;
+            margin-bottom: 20px;
         }
         .form-group {
             display: flex;
@@ -37,8 +43,8 @@
         }
         .form-group label {
             flex: 1;
-            min-width: 100px;
-            font-weight: bold;
+            min-width: 120px;
+            font-weight: 600;
             color: #333;
             margin-bottom: 5px;
         }
@@ -46,11 +52,18 @@
         .form-group select,
         .form-group input[type="checkbox"] {
             flex: 1;
-            padding: 8px;
+            padding: 10px;
             margin: 5px;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            outline: none;
         }
         .form-group input[type="checkbox"] {
             width: auto;
@@ -61,16 +74,18 @@
         }
         button {
             width: 200px;
-            padding: 10px;
+            padding: 12px;
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
             font-size: 16px;
             cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
         }
         button:hover {
             background-color: #0056b3;
+            transform: scale(1.05);
         }
         .list-group {
             display: flex;
@@ -82,16 +97,25 @@
             align-items: center;
             margin-right: 10px;
             margin-bottom: 10px;
+            flex-grow: 1;
         }
         .list-item input {
             margin-right: 10px;
             flex-grow: 1;
+            padding: 8px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .list-item input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            outline: none;
         }
         .remove-icon {
             cursor: pointer;
             color: red;
             font-weight: bold;
             font-size: 18px;
+            transition: color 0.3s ease;
         }
         .remove-icon:hover {
             color: darkred;
@@ -104,6 +128,7 @@
         .form-group.inline > div {
             flex: 1;
             min-width: 30%;
+            margin: 5px;
         }
         .form-group.inline > div label {
             margin-bottom: 5px;
