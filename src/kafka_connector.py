@@ -163,8 +163,12 @@ class KafkaConnectorManager:
             else:
                 connectors = [self.argv[1]]
             print(f"\nGet the connector status for {self.env}\n")
+            print("{:<50} {:<20}".format("Connector Name"))
+            print("{:<50} {:<20}".format("-"*50, "-"*20))
             for connector in connectors:
-                self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
+                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
+                status = response.json().get(connector, {}).get(status)
+                print("{:<50} {:<20}".format(connector, status))
 
         elif command == "create connector":
             # Ensure a connector configuration file is provided as the second argument
