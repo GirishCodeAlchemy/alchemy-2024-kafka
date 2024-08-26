@@ -96,10 +96,10 @@ class KafkaConnectorManager:
                     auth=self.auth, data=data if data else None)
 
             response.raise_for_status()  # Raise an exception for non-2xx status codes
-            if method != "DELETE":
-                print(json.dumps(response.json(), indent=4))
-            else:
-                print(f"Deleted: {response.status_code}")
+            # if method != "DELETE":
+            #     print(json.dumps(response.json(), indent=4))
+            # else:
+            #     print(f"Deleted: {response.status_code}")
 
         except requests.exceptions.RequestException:
             print(f"Error: {response.json().get('message')}")
@@ -141,7 +141,11 @@ class KafkaConnectorManager:
         # Handle different commands based on a dictionary lookup
         if command == "list connectors":
             print(f"\nList the connectors for {self.env}\n")
-            self.request_kafka(method, f"{self.url}/connectors")
+            response = self.request_kafka(method, f"{self.url}/connectors")
+            print("{:<50} ".format("Connector Name"))
+            print("{:<50} ".format("-"*50))
+            for each_connector in response.json():
+                print("{:<50} ".format(each_connector))
 
         elif command == "get connector":
             # Ensure a connector name is provided as the second argument
@@ -153,12 +157,14 @@ class KafkaConnectorManager:
             self.request_kafka(method, f"{self.url}/connectors/{connector}/config")
 
         elif command == "get connector status":
-            if len(self.argv) < 2:
-                print("Please provide a connector name for the get status operation")
-                return
-            connector = self.argv[1]
-            print(f"\nGet the connector status: {connector} for {self.env}\n")
-            self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
+            
+            if len(self.argv)==0:
+                connectors = self.request_kafka(method, f"{self.url}/connectors")
+            else:
+                connectors = [self.argv[1]]
+            print(f"\nGet the connector status for {self.env}\n")
+            for connector in connectors:
+                self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
 
         elif command == "create connector":
             # Ensure a connector configuration file is provided as the second argument
@@ -239,6 +245,7 @@ def usage(argv):
     print("\n Available commands:")
     print("\tlist                                         - Lists all connectors")
     print("\tget <connector_name>                         - Gets the configuration of a specific connector")
+    print("\tstatus                                       - Gets the status of all connectors")
     print("\tstatus <connector_name>                      - Gets the status of connectors")
     print("\tcreate <connector_json>                      - Creates a connector using a configuration json")
     print("\tupdate <connector_name> <connector_json>     - Updates the configuration of a connector")
