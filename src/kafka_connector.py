@@ -205,7 +205,7 @@ class KafkaConnectorManager:
                 connectors = [self.argv[1]]
             print(f"\nRestart the connector for {self.env}\n")
             print("{:<50} {:<30} {:<20}".format("Connector Name", "Current State", "Status"))
-            print("{:<50} {:<30} {:<20}".format("-"*40, "-"*20))
+            print("{:<50} {:<30} {:<20}".format("-"*40, "-"*20, "-"*20))
             for connector in connectors:
                 response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
                 status = response.json().get("connector", {}).get("state", "")
