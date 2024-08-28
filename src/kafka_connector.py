@@ -198,13 +198,20 @@ class KafkaConnectorManager:
             self.request_kafka("DELETE", f"{self.url}/connectors/{connector}")
 
         elif command == "restart connector":
-            if len(self.argv) < 2:
-                print("Please provide a connector name for the restart operation")
-                return
-            connector = self.argv[1]
-            print(f"\nRestart the connector: {connector} for {self.env}\n")
-            self.request_kafka(method, f"{self.url}/connectors/{connector}/restart")
-
+            if len(self.argv)==1:
+                connectors = self.request_kafka(method, f"{self.url}/connectors")
+                connectors = [connector for connector in connectors.json()]
+            else:
+                connectors = [self.argv[1]]
+            print(f"\nRestart the connector for {self.env}\n")
+            print("{:<50} {:<30} {:<20}".format("Connector Name", "Current State", "Status"))
+            print("{:<50} {:<30} {:<20}".format("-"*40, "-"*20))
+            for connector in connectors:
+                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
+                status = response.json().get("connector", {}).get("state", "")
+                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/restart")
+                print("{:<50} {:<30} {:<20}".format(connector, status, f"Restarted- {response.status_code}"))
+            print("-"*80)
         elif command == "pause connector":
             if len(self.argv) < 2:
                 print("Please provide a connector name for the pause operation")
