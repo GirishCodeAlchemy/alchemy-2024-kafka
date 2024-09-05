@@ -12,7 +12,6 @@ load_dotenv()
 
 # from utils import get_server_details
 
-
 class KafkaConnectorManager:
     def __init__(self, env, argv):
         """
@@ -213,13 +212,20 @@ class KafkaConnectorManager:
                 print("{:<50} {:<30} {:<20}".format(connector, status, f"Restarted- {response.status_code}"))
             print("-"*80)
         elif command == "pause connector":
-            if len(self.argv) < 2:
-                print("Please provide a connector name for the pause operation")
-                return
-            connector = self.argv[1]
-            print(f"\nPause the connector: {connector} for {self.env}\n")
-            self.request_kafka(method, f"{self.url}/connectors/{connector}/pause")
-
+            if len(self.argv)==1:
+                connectors = self.request_kafka(method, f"{self.url}/connectors")
+                connectors = [connector for connector in connectors.json()]
+            else:
+                connectors = [self.argv[1]]
+            print(f"\nPause the connector for {self.env}\n")
+            print("{:<50} {:<30} {:<20}".format("Connector Name", "Current State", "Status"))
+            print("{:<50} {:<30} {:<20}".format("-"*40, "-"*20, "-"*20))
+            for connector in connectors:
+                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
+                status = response.json().get("connector", {}).get("state", "")
+                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/pause")
+                print("{:<50} {:<30} {:<20}".format(connector, status, f"Paused- {response.status_code}"))
+            print("-"*80)
         elif command == "get secrets":
             print(f"\nFetch the connector secrets for {self.env}\n")
             self.request_kafka(method, f"{self.url}/secret/paths/")
