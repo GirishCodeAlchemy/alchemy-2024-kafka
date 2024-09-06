@@ -126,8 +126,10 @@ class KafkaConnectorManager:
             "restart": "restart connector",
             "pause": "pause connector",
             "resume": "resume connector",
-            "get-secret": "get secrets",
-            "set-secrets": "set secrets"
+            "list-secret": "list secrets",
+            "find-secret": "find secrets",
+            "set-secret": "set secrets",
+            "delete-secret": "delete secrets"
         }
 
         # Check if a valid command is provided as the first argument
@@ -209,7 +211,7 @@ class KafkaConnectorManager:
             for connector in connectors:
                 response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
                 status = response.json().get("connector", {}).get("state", "")
-                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/restart")
+                response = self.request_kafka("POST", f"{self.url}/connectors/{connector}/restart")
                 print("{:<50} {:<30} {:<20}".format(connector, status, f"Restarted- {response.status_code}"))
             print("-"*80)
         elif command == "pause connector":
@@ -224,7 +226,7 @@ class KafkaConnectorManager:
             for connector in connectors:
                 response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
                 status = response.json().get("connector", {}).get("state", "")
-                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/pause")
+                response = self.request_kafka("PUT", f"{self.url}/connectors/{connector}/pause")
                 print("{:<50} {:<30} {:<20}".format(connector, status, f"Paused- {response.status_code}"))
             print("-"*80)
         elif command == "resume connector":
@@ -239,12 +241,16 @@ class KafkaConnectorManager:
             for connector in connectors:
                 response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
                 status = response.json().get("connector", {}).get("state", "")
-                response = self.request_kafka(method, f"{self.url}/connectors/{connector}/resume")
+                response = self.request_kafka("PUT", f"{self.url}/connectors/{connector}/resume")
                 print("{:<50} {:<30} {:<20}".format(connector, status, f"Resume- {response.status_code}"))
             print("-"*80)
-        elif command == "get secrets":
-            print(f"\nFetch the connector secrets for {self.env}\n")
+        elif command == "list secrets":
+            print(f"\nFetch all the connector secrets for {self.env}\n")
             self.request_kafka(method, f"{self.url}/secret/paths/")
+        elif command == "find secrets":
+            connector_secret = self.argv[1]
+            print(f"\nFetch the connector secrets for {self.env}\n")
+            self.request_kafka(method, f"{self.url}/secret/paths/{connector_secret}/keys/")
 
         elif command == "set secrets":
             if len(self.argv) < 2:
@@ -254,6 +260,15 @@ class KafkaConnectorManager:
             secret = json.dumps({"secret": self.argv[2]})
             print(f"\nSet the secret for connector: {connector} in {self.env}\n")
             self.request_kafka("POST", f"{self.url}/secret/paths/{connector}/keys/auth/version", data=secret)
+
+        elif command == "delete secrets":
+            connector_secret = self.argv[1]
+            print(f"\nDelete the connector secrets for {self.env}\n")
+            try:
+                self.request_kafka("DELETE", f"{self.url}/secret/paths/{connector_secret}")
+                print(f"Successfully deleted the connector secret {connector_secret}")
+            except Exception as e:
+                print(f"Failed to delete the connector secret {connector_secret}, Error: {e}")
 
         # elif command in ("restart connector", "pause connector"):
         #     # Implement logic for these commands
