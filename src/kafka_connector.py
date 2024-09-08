@@ -259,7 +259,10 @@ class KafkaConnectorManager:
             connector = self.argv[1]
             secret = json.dumps({"secret": self.argv[2]})
             print(f"\nSet the secret for connector: {connector} in {self.env}\n")
-            self.request_kafka("POST", f"{self.url}/secret/paths/{connector}/keys/auth/version", data=secret)
+            try:
+                self.request_kafka("POST", f"{self.url}/secret/paths/{connector}/keys/auth/version", data=secret)
+            except Exception as e:
+                print(f"Failed to Create the connector secret {connector}, Error: {e}")
 
         elif command == "delete secrets":
             connector_secret = self.argv[1]
