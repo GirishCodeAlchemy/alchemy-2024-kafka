@@ -211,8 +211,11 @@ class KafkaConnectorManager:
             for connector in connectors:
                 response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
                 status = response.json().get("connector", {}).get("state", "")
-                response = self.request_kafka("POST", f"{self.url}/connectors/{connector}/restart")
-                print("{:<50} {:<30} {:<20}".format(connector, status, f"Restarted- {response.status_code}"))
+                try:
+                    response = self.request_kafka("POST", f"{self.url}/connectors/{connector}/restart")
+                    print("{:<50} {:<30} {:<20}".format(connector, status, f"Restarted- {response.status_code}"))
+                except Exception as e:
+                    print("{:<50} {:<30} {:<20}".format(connector, status, f"Failed to Restart- {e}"))
             print("-"*80)
         elif command == "pause connector":
             if len(self.argv)==1:
@@ -226,8 +229,11 @@ class KafkaConnectorManager:
             for connector in connectors:
                 response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
                 status = response.json().get("connector", {}).get("state", "")
-                response = self.request_kafka("PUT", f"{self.url}/connectors/{connector}/pause")
-                print("{:<50} {:<30} {:<20}".format(connector, status, f"Paused- {response.status_code}"))
+                try:
+                    response = self.request_kafka("PUT", f"{self.url}/connectors/{connector}/pause")
+                    print("{:<50} {:<30} {:<20}".format(connector, status, f"Paused- {response.status_code}"))
+                except Exception as e:
+                    print("{:<50} {:<30} {:<20}".format(connector, status, f"Failed to Pause- {e}"))
             print("-"*80)
         elif command == "resume connector":
             if len(self.argv)==1:
@@ -241,8 +247,11 @@ class KafkaConnectorManager:
             for connector in connectors:
                 response = self.request_kafka(method, f"{self.url}/connectors/{connector}/status")
                 status = response.json().get("connector", {}).get("state", "")
-                response = self.request_kafka("PUT", f"{self.url}/connectors/{connector}/resume")
-                print("{:<50} {:<30} {:<20}".format(connector, status, f"Resume- {response.status_code}"))
+                try:
+                    response = self.request_kafka("PUT", f"{self.url}/connectors/{connector}/resume")
+                    print("{:<50} {:<30} {:<20}".format(connector, status, f"Resume- {response.status_code}"))
+                except Exception as e:
+                    print("{:<50} {:<30} {:<20}".format(connector, status, f"Failed to Resume- {e}"))
             print("-"*80)
         elif command == "list secrets":
             print(f"\nFetch all the connector secrets for {self.env}\n")
@@ -272,7 +281,6 @@ class KafkaConnectorManager:
                 print(f"Successfully deleted the connector secret {connector_secret}")
             except Exception as e:
                 print(f"Failed to delete the connector secret {connector_secret}, Error: {e}")
-
         # elif command in ("restart connector", "pause connector"):
         #     # Implement logic for these commands
         #     print(f"Command: {command} is not currently implemented\n")
@@ -301,6 +309,7 @@ def usage(argv):
     print("\tcreate <connector_json>                      - Creates a connector using a configuration json")
     print("\tupdate <connector_name> <connector_json>     - Updates the configuration of a connector")
     print("\tdelete <connector_name>                      - Deletes a specific connector")
+    print("\trestart                                      - Restart all the connectors")
     print("\trestart <connector_name>                     - Restarts a specific connector")
     print("\tpause                                        - Pauses all the connectors\n")
     print("\tpause <connector_name>                       - Pauses a specific connector\n")
