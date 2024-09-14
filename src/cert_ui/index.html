@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cert Management</title>
+    <style>
+        /* Basic styling for tabs */
+        .tab {
+            display: inline-block;
+            background-color: #f1f1f1;
+            padding: 10px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .tab-content {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .active {
+            background-color: #ccc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Cert Management Dashboard</h2>
+
+<!-- Tabs for each type -->
+<div id="tabs">
+    {% for type in json_data %}
+        <div class="tab" onclick="showTab('{{ type }}')">{{ type }}</div>
+    {% endfor %}
+</div>
+
+<!-- Content for each tab -->
+<div id="tab-content">
+    {% for type, hosts in json_data.items() %}
+        <div class="tab-content" id="{{ type }}">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Host</th>
+                        <th>Expiry Date</th>
+                        <th>Number of Days Remaining</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for host, details in hosts.items() %}
+                        <tr>
+                            <td>{{ host }}</td>
+                            <td>{{ details['expiry_date'] }}</td>
+                            <td>{{ details['number_of_days_remaining'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+    // JavaScript to switch between tabs
+    function showTab(tabName) {
+        var contents = document.getElementsByClassName('tab-content');
+        var tabs = document.getElementsByClassName('tab');
+
+        // Hide all tab content
+        for (var i = 0; i < contents.length; i++) {
+            contents[i].style.display = 'none';
+        }
+
+        // Remove 'active' class from all tabs
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+        }
+
+        // Show the selected tab content and add 'active' class
+        document.getElementById(tabName).style.display = 'block';
+        event.target.classList.add('active');
+    }
+
+    // Show the first tab by default
+    document.addEventListener('DOMContentLoaded', function () {
+        var firstTab = document.getElementsByClassName('tab')[0];
+        firstTab.click();
+    });
+</script>
+
+</body>
+</html>
