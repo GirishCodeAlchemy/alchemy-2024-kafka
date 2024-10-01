@@ -4,11 +4,16 @@ import json
 import os
 import sys
 from subprocess import PIPE, Popen
+from tkinter import SE
 
 import requests
 from dotenv import load_dotenv
+from tabulate import tabulate
 
 load_dotenv()
+
+TABLE_FORMAT = ['grid', 'simple', 'double_outline', 'fancy_grid', 'fancy_outline']
+SELECTED_TABLE_FORMAT = TABLE_FORMAT[3]
 
 
 def load_config():
@@ -139,8 +144,7 @@ class KafkaConnectorManager:
         Returns:
             str: The URL for Kafka connectors
         """
-        print(self.active_env)
-        protocol = "https" if {self.active_env.get('cacert')} else "http"
+        protocol = "https" if self.active_env.get('cacert') is not None else "http"
         return f"{protocol}://{self.active_env['server']}:{self.active_env['port']}"
 
     def get_password(self):
@@ -189,11 +193,35 @@ class KafkaConnectorManager:
                 )
 
             response.raise_for_status()
-            return response
+            # return response
 
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")
         return response
+
+    def get_connector_status(self, connectors):
+        status_data = []
+        for connector in connectors:
+            status = self._fetch_connector_status(connector)
+            status_data.append([connector, status])
+
+        self._display_status_table(status_data)
+
+    def _fetch_connector_status(self, connector):
+        try:
+            response = self.request_kafka("GET", f"/connectors/{connector}/status")
+            if response is None or not response.ok:
+                return f"Error: Status code {response.status_code if response else 'N/A'}"
+
+            status_json = response.json()
+            return status_json.get("connector", {}).get("state", "Unknown")
+        except Exception as e:
+            return f"Error: {str(e)}"
+
+    def _display_status_table(self, status_data):
+        headers = ["Connector Name", "Status"]
+        table = tabulate(status_data, headers=headers, tablefmt=SELECTED_TABLE_FORMAT)
+        print(table)
 
     def handle_command(self):
         """
@@ -208,8 +236,12 @@ class KafkaConnectorManager:
             if not response:
                 return
             connectors = response.json()
-            for each_connector in connectors:
-                print(each_connector)
+            table = tabulate(
+                [[connector] for connector in connectors],
+                headers=["Connector Name"],
+                tablefmt=SELECTED_TABLE_FORMAT,
+            )
+            print(table)
 
         elif command == "get":
             if not self.args.connector:
@@ -217,22 +249,53 @@ class KafkaConnectorManager:
                 return
             connector = self.args.connector
             print(f"\nGet the connector config: {connector} for {self.env}\n")
-            self.request_kafka(method, f"/connectors/{connector}/config")
+
+            response = self.request_kafka(method, f"/connectors/{connector}/config")
+            if response is None or not response.ok:
+                print(f"Failed to get config for connector {connector}. Status code: {response.status_code if response else 'N/A'}")
+                return
+
+            try:
+                config = response.json()
+                # Convert the config dictionary to a list of lists
+                table_data = [[key, value] for key, value in config.items()]
+
+                # Create and print the table
+                table = tabulate(table_data, headers=["Config Key", "Value"], tablefmt="fancy_grid")
+                print(f"Configuration for connector: {connector}")
+                print(table)
+
+                print("\nComplete JSON response:")
+                print(json.dumps(config, indent=4))
+            except json.JSONDecodeError:
+                print(f"Failed to parse response for connector {connector}. Response text: {response.text}")
+            except Exception as e:
+                print(f"An error occurred while processing the config: {str(e)}")
 
         elif command == "status":
             connectors = [self.args.connector] if self.args.connector else self.request_kafka(method, "/connectors").json()
             print(f"\nGet the connector status for {self.env}\n")
-            for connector in connectors:
-                response = self.request_kafka(method, f"/connectors/{connector}/status")
-                status = response.json().get("connector", {}).get("state", "")
-                print(f"{connector}: {status}")
+            self.get_connector_status(connectors)
 
         elif command == "create":
-            if not self.args.config:
-                print("Please provide a connector configuration file for the create operation")
+            if self.args.config:
+                try:
+                    # Try to load the config from the provided JSON string
+                    data = json.loads(self.args.config)
+                except json.JSONDecodeError as e:
+                    print(f"Invalid JSON string provided: {e}")
+                    return
+            elif self.args.config_file:
+                try:
+                    # If a config file is provided, load it
+                    with open(self.args.config_file) as config_file:
+                        data = json.load(config_file)
+                except Exception as e:
+                    print(f"Error reading config file: {e}")
+                    return
+            else:
+                print("Please provide either a JSON string or a config file for the create operation.")
                 return
-            with open(self.args.config) as config_file:
-                data = json.load(config_file)
             print(f"\nCreating the connector in {self.env}\n")
             self.request_kafka("POST", "/connectors", data=data)
 
@@ -314,7 +377,11 @@ def main():
     parser_status = subparsers.add_parser("status", help="Get connector status")
     parser_status.add_argument("connector", help="Connector name", nargs="?")
     parser_create = subparsers.add_parser("create", help="Create a connector")
-    parser_create.add_argument("config", help="Connector config JSON file")
+    parser_create.add_argument("config", help="Connector configuration as a JSON string")
+    # Create a connector with either a config file or JSON string
+    parser_create.add_argument("--config-file", help="Connector config JSON file")
+    # parser_create.add_argument("--config-json", help="Connector configuration as a JSON string")
+
     parser_update = subparsers.add_parser("update", help="Update a connector")
     parser_update.add_argument("connector", help="Connector name")
     parser_update.add_argument("config", help="Connector config JSON file")
